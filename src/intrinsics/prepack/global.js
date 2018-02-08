@@ -279,10 +279,10 @@ export default function(realm: Realm): void {
 
   // __makeSimple(object) marks an (abstract) object as one that has no getters or setters.
   global.$DefineOwnProperty("__makeSimple", {
-    value: new NativeFunctionValue(realm, "global.__makeSimple", "__makeSimple", 1, (context, [object]) => {
+    value: new NativeFunctionValue(realm, "global.__makeSimple", "__makeSimple", 1, (context, [object, option]) => {
       // casting to any to avoid Flow bug
       if ((object: any) instanceof AbstractObjectValue || (object: any) instanceof ObjectValue) {
-        (object: any).makeSimple();
+        (object: any).makeSimple(option);
         return object;
       }
       throw realm.createErrorThrowCompletion(realm.intrinsics.TypeError, "not an (abstract) object");

@@ -77,6 +77,7 @@ export default class ObjectValue extends ConcreteValue {
     this._isPartial = realm.intrinsics.false;
     this._hasLeaked = realm.intrinsics.false;
     this._isSimple = realm.intrinsics.false;
+    this._simplicityIsTransitive = realm.intrinsics.false;
     this.properties = new Map();
     this.symbols = new Map();
     this.refuseSerialization = refuseSerialization;
@@ -87,6 +88,7 @@ export default class ObjectValue extends ConcreteValue {
     "_isPartial",
     "_hasLeaked",
     "_isSimple",
+    "_simplicityIsTransitive",
     "$ArrayIteratorNextIndex",
     "$DateValue",
     "$Extensible",
@@ -253,6 +255,9 @@ export default class ObjectValue extends ConcreteValue {
   // to return AbstractValue for unknown properties.
   _isSimple: BooleanValue;
 
+  // If true, then unknown properties should return transitively simple abstract object values
+  _simplicityIsTransitive: BooleanValue;
+
   isTemplate: void | true;
 
   properties: Map<string, PropertyBinding>;
@@ -306,8 +311,12 @@ export default class ObjectValue extends ConcreteValue {
     this._isPartial = this.$Realm.intrinsics.true;
   }
 
-  makeSimple(): void {
+  makeSimple(option?: any): void {
     this._isSimple = this.$Realm.intrinsics.true;
+    this._simplicityIsTransitive = new BooleanValue(
+      this.$Realm,
+      option === "transitive" || (option instanceof StringValue && option.value === "transitive")
+    );
   }
 
   isPartialObject(): boolean {
@@ -341,6 +350,10 @@ export default class ObjectValue extends ConcreteValue {
     if (this.$Prototype instanceof NullValue) return true;
     if (this.$Prototype === this.$Realm.intrinsics.ObjectPrototype) return true;
     return this.$Prototype.isSimpleObject();
+  }
+
+  isTransitivelySimple(): boolean {
+    return this._simplicityIsTransitive.value;
   }
 
   getExtensible(): boolean {

@@ -1127,9 +1127,34 @@ export class PropertiesImplementation {
             // In this case it is safe to defer the property access to runtime (at this point in time)
             invariant(realm.generator);
             let pname = realm.generator.getAsPropertyNameExpression(P);
-            let absVal = AbstractValue.createTemporalFromBuildFunction(realm, Value, [O], ([node]) =>
-              t.memberExpression(node, pname, !t.isIdentifier(pname))
-            );
+            let absVal;
+            if (O.isTransitivelySimple()) {
+              absVal = AbstractValue.createTemporalFromBuildFunction(
+                realm,
+                ObjectValue,
+                [O],
+                ([node]) => {
+                  return t.memberExpression(node, pname, !t.isIdentifier(pname));
+                },
+                { skipInvariant: true }
+              );
+              invariant(absVal instanceof AbstractObjectValue);
+              absVal.makeSimple("transitive");
+              absVal = AbstractValue.createAbstractConcreteUnion(
+                realm,
+                absVal,
+                realm.intrinsics.undefined,
+                realm.intrinsics.null
+              );
+            } else {
+              absVal = AbstractValue.createTemporalFromBuildFunction(
+                realm,
+                Value,
+                [O],
+                ([node]) => t.memberExpression(node, pname, !t.isIdentifier(pname)),
+                { skipInvariant: true }
+              );
+            }
             return { configurable: true, enumerable: true, value: absVal, writable: true };
           } else {
             invariant(P instanceof SymbolValue);
